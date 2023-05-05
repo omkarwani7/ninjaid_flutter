@@ -5,6 +5,7 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'loginscreen.dart';
+import 'model/user.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +53,7 @@ class _AuthCheckState extends State<AuthCheck> {
     try {
       if (sharedPreferences.getString('employeeId') != null) {
         setState(() {
+          User.username = sharedPreferences.getString('employeeId')!;
           userAvailable = true;
         });
       }
