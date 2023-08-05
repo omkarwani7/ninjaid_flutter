@@ -1,6 +1,8 @@
 import 'package:attendanceapp/calendarscreen.dart';
 import 'package:attendanceapp/profilescreen.dart';
+import 'package:attendanceapp/services/location_screen.dart';
 import 'package:attendanceapp/todayscreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
@@ -9,9 +11,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent-tab-view.dart';
 
 import 'loginscreen.dart';
+import 'model/user.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -20,6 +23,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   double screenHeight = 0;
   double screenWidth = 0;
+
+  //String id = '';
 
   Color primary = const Color(0xffeeff444c);
 
@@ -30,6 +35,59 @@ class _HomeScreenState extends State<HomeScreen> {
     FontAwesomeIcons.check,
     FontAwesomeIcons.user,
   ];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _startLocationService();
+    _getCredentials();
+    getId();
+  }
+
+  void _getCredentials() async {
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection("Employee")
+          .doc(User.id)
+          .get();
+      setState(() {
+        User.canEdit = doc['canEdit'];
+        User.firstName = doc['firstName'];
+        User.lastName = doc['lastName'];
+        User.birthDate = doc['birthDate'];
+        User.address = doc['address'];
+      });
+    } catch (e) {
+      return;
+    }
+  }
+
+  void _startLocationService() async {
+    LocationService().initialize();
+    LocationService().getLongitude().then((value) {
+      setState(() {
+        User.long = value!;
+      });
+      LocationService().getLatitude().then((value) {
+        setState(() {
+          User.lat = value!;
+        });
+      });
+    });
+  }
+
+  void getId() async {
+    QuerySnapshot snap = await FirebaseFirestore.instance
+        .collection("Employee")
+        .where('id', isEqualTo: User.employeeId)
+        .get();
+
+    setState(() {
+      User.id = snap.docs[0].id;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     screenHeight = MediaQuery.of(context).size.height;
@@ -37,10 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: currentIndex,
-        children: const [
-          CalendarScreen(),
-          TodayScreen(),
-          ProfileScreen(),
+        children: [
+          new CalendarScreen(),
+          new TodayScreen(),
+          new ProfileScreen(),
         ],
       ),
       bottomNavigationBar: Container(
